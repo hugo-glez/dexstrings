@@ -139,11 +139,9 @@ void help_show_message(char name[])
 {
 	fprintf(stderr, "Usage: %s  <file.dex> [options]\n",name);
 	fprintf(stderr, " options:\n");
- //   fprintf(stderr, "\t-a\tprint all the strings\n");
- //   fprintf(stderr, "\t-l\tprint all the strings with they classification\n");
+
     fprintf(stderr, "\t-t\tprint only the text strings\n");
- //   fprintf(stderr, "\t-c\tprint only the name of the classes\n");
- //   fprintf(stderr, "\t-m\tprint only the name of the methods\n");
+
 }
 int main(int argc, char *argv[])
 {
@@ -201,9 +199,6 @@ int main(int argc, char *argv[])
 	fread(fileinmemory,1,filesize,input); // file in memory contains the binary
     fclose(input);
 
-
-    
-    //  TODO : read all the parameters and DO something
         while ((c = getopt(argc, argv, "t")) != -1) {
                 switch(c) {
      		case 't':
@@ -240,15 +235,6 @@ int main(int argc, char *argv[])
 	if (*header->endian_tag != 0x12345678) {
 		fprintf (stderr,"Warning: Endian tag != 0x12345678\n");
 	}
-
-
-
-
-    //type_id_list = (struct type_id_struct *)fileinmemory + *header->type_ids_off;
-    //proto_id_list = (struct proto_id_struct *) fileinmemory + *header->proto_ids_off;
-    //field_id_list = (struct field_id_struct *) fileinmemory + *header->field_ids_off;
-    //method_id_list = (struct method_id_struct *) fileinmemory + *header->method_ids_off;
-    //class_id_list = (struct class_id_struct *) fileinmemory + *header->class_ids_off;
 
 	/* strings */
     u2 strptr = sizeof(string_id_struct);
@@ -323,20 +309,8 @@ int main(int argc, char *argv[])
         }
 	}
 
-/*
-
-	for (i=0;i<sizeof(method_id_item)*(*header.method_ids_size);i+=8) {
-		printf ("method_id_list[%d]class=%x\n", i/8, *method_id_list[i/8].class_idx);
-		printf ("method_id_list[%d]proto=%x\n", i/8, *method_id_list[i/8].proto_idx);
-		printf ("method_id_list[%d]name=%x\n\n", i/8, *method_id_list[i/8].name_idx);
-	}
-*/
-
 
 	free(fileinmemory);
-	//free(method_id_list);
-	//free(string_id_list);
 
-	//fclose(input);
 	return 0;
 }
