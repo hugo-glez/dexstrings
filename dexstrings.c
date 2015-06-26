@@ -4,7 +4,7 @@
  *
  * compile:
  *     gcc -g -o dexstrings dexstrings.c -lm
- *     some warnings will be showed, you can ignore that.
+ *     some warnings will be showed because the use of pointers, you can probably ignore that.
  *
  */
 
@@ -15,16 +15,12 @@
 #include <getopt.h>
 #include <sys/stat.h>
 
-#define VERSION "0.6"
+#define VERSION "0.7"
 
 typedef uint8_t             u1;
 typedef uint16_t            u2;
 typedef uint32_t            u4;
 typedef uint64_t            u8;
-typedef int8_t              s1;
-typedef int16_t             s2;
-typedef int32_t             s4;
-typedef int64_t             s8;
 
 typedef struct {
 	char dex[3];
@@ -100,9 +96,7 @@ typedef struct {
 void printStrings2(u1 *file, u4 offset)
 {
     u1 *uValues = file;
-    int uLebValue, uLebValueLength;
     char *stringData;
-
 
     printf("%x, ",offset);
     /* Replace the uleb128_value function to put it inline */
@@ -127,7 +121,7 @@ void printStrings2(u1 *file, u4 offset)
     } 
     printf ("%i, ",result);
 	stringData = malloc(result * sizeof(u1)+1);
-    memcpy(stringData, ptr , result);
+    memcpy(stringData, ptr , result); // to print the string even if its unicode
 	stringData[result]='\0';	
 	printf(".:%s:.\n",stringData);
 	free(stringData);
@@ -139,7 +133,6 @@ void help_show_message(char name[])
 {
 	fprintf(stderr, "Usage: %s  <file.dex> [options]\n",name);
 	fprintf(stderr, " options:\n");
-
     fprintf(stderr, "\t-t\tprint only the text strings\n");
 
 }
@@ -195,18 +188,22 @@ int main(int argc, char *argv[])
     fileinmemory = malloc(filesize*sizeof(u1));
     if (fileinmemory == NULL) {
         fprintf(stderr, "ERROR: Can't allocate memory!\n");
+        perror("Memory for the file");
+        fclose(input);
+        exit(1);
     }
+
 	fread(fileinmemory,1,filesize,input); // file in memory contains the binary
     fclose(input);
 
-        while ((c = getopt(argc, argv, "t")) != -1) {
-                switch(c) {
-     		case 't':
+    while ((c = getopt(argc, argv, "t")) != -1) {
+          switch(c) {
+             case 't':
 			    iOnlyStrings=2;
 			    break;
-            default:
-                        help_show_message(argv[0]);
-                        return 1;
+             default:
+                help_show_message(argv[0]);
+                return 1;
                 }
         }
 
@@ -219,7 +216,7 @@ int main(int argc, char *argv[])
 	     (strncmp(header->magic.newline,"\n",1) != 0) || 
 	     (strncmp(header->magic.zero,"\0",1) != 0 ) ) {
 		fprintf (stderr, "ERROR: not a dex file\n");
-		fclose(input);
+		free(fileinmemory);
 		exit(1);
 	}
 
