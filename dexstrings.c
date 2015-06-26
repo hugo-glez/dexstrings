@@ -8,6 +8,10 @@
  *
  */
 
+/* Jun 26, 2015 Check for unicode added, if the length of chars and unicode are
+ * different, we have unicode in the string.
+ * */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,7 +19,7 @@
 #include <getopt.h>
 #include <sys/stat.h>
 
-#define VERSION "0.7"
+#define VERSION "0.8"
 
 typedef uint8_t             u1;
 typedef uint16_t            u2;
@@ -93,12 +97,21 @@ typedef struct {
 } field_id_struct;
 
 
-void printStrings2(u1 *file, u4 offset)
+size_t utf8len(char *s)
+{
+  size_t len = 0;
+  for (; *s; ++s) if ((*s & 0xC0) != 0x80) ++len;
+  return len;
+}
+
+
+void printStrings2(u1 *file, u4 offset, int iSize, int iUnicode)
 {
     u1 *uValues = file;
     char *stringData;
+    int unicodelen;
 
-    printf("%x, ",offset);
+    printf("%x | ",offset);
     /* Replace the uleb128_value function to put it inline */
     //uLebValue = uleb128_value(uValues+offset);
     u1 *ptr = uValues+offset;
@@ -119,10 +132,14 @@ void printStrings2(u1 *file, u4 offset)
             }
         }
     } 
-    printf ("%i, ",result);
 	stringData = malloc(result * sizeof(u1)+1);
     memcpy(stringData, ptr , result); // to print the string even if its unicode
-	stringData[result]='\0';	
+	stringData[result]='\0';
+    unicodelen = utf8len(stringData);
+    if (iSize!=0)   
+        printf ("%i | %i | ",result, unicodelen);
+    if (iUnicode !=0) 
+        if (result != unicodelen) printf ("_U_ |"); else printf("    |");
 	printf(".:%s:.\n",stringData);
 	free(stringData);
 
@@ -134,6 +151,9 @@ void help_show_message(char name[])
 	fprintf(stderr, "Usage: %s  <file.dex> [options]\n",name);
 	fprintf(stderr, " options:\n");
     fprintf(stderr, "\t-t\tprint only the text strings\n");
+    fprintf(stderr, "\t-s\tprint the size of strings\n");
+    fprintf(stderr, "\t-r\tprint how many references a string have\n");
+    fprintf(stderr, "\t-u\tcheck if the string contain unicode\n");
 
 }
 int main(int argc, char *argv[])
@@ -145,6 +165,9 @@ int main(int argc, char *argv[])
 
     int iFound;
     int iOnlyStrings=0;
+    int iSize=0;
+    int iRef=0;
+    int iUnicode=0;
 
 
 	dex_header* header;
@@ -196,10 +219,19 @@ int main(int argc, char *argv[])
 	fread(fileinmemory,1,filesize,input); // file in memory contains the binary
     fclose(input);
 
-    while ((c = getopt(argc, argv, "t")) != -1) {
+    while ((c = getopt(argc, argv, "tsru")) != -1) {
           switch(c) {
              case 't':
 			    iOnlyStrings=2;
+			    break;
+             case 's':
+			    iSize=2;
+			    break;
+             case 'r':
+			    iRef=2;
+			    break;
+             case 'u':
+			    iUnicode=2;
 			    break;
              default:
                 help_show_message(argv[0]);
@@ -242,7 +274,7 @@ int main(int argc, char *argv[])
 	for (i= 0; i < *header->string_ids_size; i++) {
         string_id_list = (struct string_id_struct *) (fileinmemory + *header->string_ids_off + strptr * i); 
         iFound = 0;
-		if (iOnlyStrings == 0) printf("%d : ", i);
+		if (iOnlyStrings == 0) printf("%d | ", i);
         // check if the other guys are using this string.
         // types
         for (j=0; j < *header->type_ids_size; j++)
@@ -295,13 +327,15 @@ int main(int argc, char *argv[])
         }
 
 		if (iOnlyStrings == 0) {
-		    printf(" : ");
-		    printStrings2(fileinmemory, *string_id_list->string_data_off); 
+            if (iFound == 0) printf( "S" );
+		    printf(" | ");
+            if (iRef !=0) printf("%i | ",iFound);
+		    printStrings2(fileinmemory, *string_id_list->string_data_off, iSize, iUnicode); 
         }
         else {
             if (iFound == 0) {
-            printf("%d : ", i);
-		    printStrings2(fileinmemory, *string_id_list->string_data_off); 
+            printf("%d | ", i);
+		    printStrings2(fileinmemory, *string_id_list->string_data_off, iSize, iUnicode); 
             }
         }
 	}
