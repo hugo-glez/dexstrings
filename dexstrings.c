@@ -321,7 +321,7 @@ int main(int argc, char *argv[])
                 iFound++;
             }
             if (i == *class_def_list->source_file_idx) {
-                if (iOnlyStrings == 0) printf("S");
+                if (iOnlyStrings == 0) printf("J");
                 iFound++;
             }
         }
