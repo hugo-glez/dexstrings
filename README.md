@@ -11,6 +11,11 @@ If the strings are in a different language (chinese, russian), you will need to 
 H.
 
 ## Changelog
+
+
+###v1.0
+After more testing, new release.
+[![DOI](https://zenodo.org/badge/36319360.svg)](https://zenodo.org/badge/latestdoi/36319360)
 ###0.8
 New options added: -u -r -s
 
